@@ -1,94 +1,139 @@
-// import express
-const express = require("express");
+//jshint esversion:6
 
-// instance of epxress
+const express = require("express");
+const mongoose = require("mongoose");
+const _ = require("lodash");
+
 const app = express();
 
-// items array
+app.set('view engine', 'ejs');
 
-let items = ["LoloDile seva", "Jatt de Jawani", "Jai Shri Ram"];
-let workItems = [];
-
-// set ejs
-// should be declared after app (it uses app duh!)
-app.set("view engine", "ejs");
-
-// body parser
-app.use(express.urlencoded({extended: true}))
-
-// static for css
+app.use(express.urlencoded({extended: true}));
 app.use(express.static("public"));
 
-// to respond to get request
-app.get("/", function (req, res) {
-    var today = new Date();
+mongoose.connect("mongodb://localhost:27017/todolistDB", {useNewUrlParser: true});
 
-    // varible to pass to ejs
-    // var day = "";
+const itemsSchema = {
+  name: String
+};
 
-    // Challenge to return day
-    // Angela used switch statements
-    //   var weekday = new Array(7);
-    //   weekday[0] = "Sunday";
-    //   weekday[1] = "Monday";
-    //   weekday[2] = "Tuesday";
-    //   weekday[3] = "Wednesday";
-    //   weekday[4] = "Thursday";
-    //   weekday[5] = "Friday";
-    //   weekday[6] = "Saturday";
+const Item = mongoose.model("Item", itemsSchema);
 
-    // usingtoLocaleDateString
-    const options = {
-        weekday: "long",
-        day: "numeric",
-        month: "long"
+
+const item1 = new Item({
+  name: "Welcome to your todolist!"
+});
+
+const item2 = new Item({
+  name: "Hit the + button to add a new item."
+});
+
+const item3 = new Item({
+  name: "<-- Hit this to delete an item."
+});
+
+const defaultItems = [item1, item2, item3];
+
+const listSchema = {
+  name: String,
+  items: [itemsSchema]
+};
+
+const List = mongoose.model("List", listSchema);
+
+
+app.get("/", function(req, res) {
+
+  Item.find({}, function(err, foundItems){
+
+    if (foundItems.length === 0) {
+      Item.insertMany(defaultItems, function(err){
+        if (err) {
+          console.log(err);
+        } else {
+          console.log("Successfully savevd default items to DB.");
+        }
+      });
+      res.redirect("/");
+    } else {
+      res.render("list", {listTitle: "Today", newListItems: foundItems});
     }
+  });
 
-    var day = today.toLocaleDateString("en-US", options)
+});
+
+app.get("/:customListName", function(req, res){
+  const customListName = _.capitalize(req.params.customListName);
+
+  List.findOne({name: customListName}, function(err, foundList){
+    if (!err){
+      if (!foundList){
+        //Create a new list
+        const list = new List({
+          name: customListName,
+          items: defaultItems
+        });
+        list.save();
+        res.redirect("/" + customListName);
+      } else {
+        //Show an existing list
+
+        res.render("list", {listTitle: foundList.name, newListItems: foundList.items});
+      }
+    }
+  });
 
 
-    // getDay converts days into number
-    // 0 = sunday .... 6 = saturday
-    // if (today.getDay() === 6 || today.getDay() === 0) {
-    //     day = "Weekend!";
-    // } else {
-    //     day = "Weekday!";
-    // }
 
-    res.render("list", {listTitle: day, newItems: items}); //challenge sol add (weekday[today.getDay()])
 });
 
 app.post("/", function(req, res){
-    var item = req.body.todo;
-    console.log(item);
-    items.push(item);
-    res.redirect("/");    
-})
+
+  const itemName = req.body.newItem;
+  const listName = req.body.list;
+
+  const item = new Item({
+    name: itemName
+  });
+
+  if (listName === "Today"){
+    item.save();
+    res.redirect("/");
+  } else {
+    List.findOne({name: listName}, function(err, foundList){
+      foundList.items.push(item);
+      foundList.save();
+      res.redirect("/" + listName);
+    });
+  }
+});
+
+app.post("/delete", function(req, res){
+  const checkedItemId = req.body.checkbox;
+  const listName = req.body.listName;
+
+  if (listName === "Today") {
+    Item.findByIdAndRemove(checkedItemId, function(err){
+      if (!err) {
+        console.log("Successfully deleted checked item.");
+        res.redirect("/");
+      }
+    });
+  } else {
+    List.findOneAndUpdate({name: listName}, {$pull: {items: {_id: checkedItemId}}}, function(err, foundList){
+      if (!err){
+        res.redirect("/" + listName);
+      }
+    });
+  }
 
 
-// work lists
-app.get("/work", function(req, res){
-    res.render("list", {
-        listTitle: "Work List",
-        newItems: workItems
-    })
-})
-
-app.post("/work", function(req, res){
-    let item = req.body.todo
-    workItems.push(item);
-    res.redirect("/work")
-})
-
-//About function
+});
 
 app.get("/about", function(req, res){
-    res.render("about");
-})
+  res.render("about");
+});
 
-
-
-// So that servers listens to request on port 3000
-app.listen(3000, function (req, res) {
-    console.log("Server up and running on Port 3000");
+app.listen(3000, function() {
+  console.log("Server started on port 3000");
 });
