@@ -1,21 +1,21 @@
 //jshint esversion:6
 
-// require 
+// require
 const express = require("express");
 // const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const _ = require("lodash");
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-
-let post_array = [];
+// let post_array = [];
 // insitailazation
 const app = express();
 
 // // mongoose connect
-mongoose.connect('mongodb://localhost/blogDB', {useNewUrlParser: true, useUnifiedTopology: true});
-
-
+mongoose.connect("mongodb://localhost/blogDB", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+});
 
 // app use setting
 app.set("view engine", "ejs");
@@ -25,12 +25,11 @@ app.use(express.static("public"));
 
 // mongoose schema
 const postSchema = new mongoose.Schema({
-  title: String,
-  content: String
-})
+    title: String,
+    content: String,
+});
 
-const blogPost = mongoose.model('post', postSchema);
-
+const blogPost = mongoose.model("post", postSchema);
 
 // Varibles
 const homeStartingContent =
@@ -40,13 +39,17 @@ const aboutContent =
 const contactContent =
     "Scelerisque eleifend donec pretium vulputate sapien. Rhoncus urna neque viverra justo nec ultrices. Arcu dui vivamus arcu felis bibendum. Consectetur adipiscing elit duis tristique. Risus viverra adipiscing at in tellus integer feugiat. Sapien nec sagittis aliquam malesuada bibendum arcu vitae. Consequat interdum varius sit amet mattis. Iaculis nunc sed augue lacus. Interdum posuere lorem ipsum dolor sit amet consectetur adipiscing elit. Pulvinar elementum integer enim neque. Ultrices gravida dictum fusce ut placerat orci nulla. Mauris in aliquam sem fringilla ut morbi tincidunt. Tortor posuere ac ut consequat semper viverra nam libero.";
 
-
 // challenge one
 // "/" root route
 app.get("/", function (req, res) {
-    res.render("home", {
-        home_content: homeStartingContent,
-        blogPosts: post_array,
+    blogPost.find({}, function (err, posts) {
+        if (err) {
+            console.log(err);
+        }
+        res.render("home", {
+            home_content: homeStartingContent,
+            blogPosts: posts,
+        });
     });
 });
 
@@ -92,12 +95,11 @@ app.get("/posts/:topic", function (req, res) {
 // post requests
 
 app.post("/compose", function (req, res) {
-    
     const post = new blogPost({
         title: req.body.postTitle,
-        content: req.body.postBody        
-    })
-    
+        content: req.body.postBody,
+    });
+
     post.save();
     res.redirect("/");
 });
