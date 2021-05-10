@@ -14,7 +14,7 @@ const app = express();
 // // mongoose connect
 mongoose.connect("mongodb://localhost/blogDB", {
     useNewUrlParser: true,
-    useUnifiedTopology: true,
+    useUnifiedTopology: true
 });
 
 // app use setting
