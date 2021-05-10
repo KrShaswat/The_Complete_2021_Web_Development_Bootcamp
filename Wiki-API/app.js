@@ -67,6 +67,57 @@ app.route("/articles")
     })
 });
 
+/////////////////////////////////////Requests Targeting Specific Artcile /////////////////
+app.route("/articles/:articleName")
+
+.get(function(req, res){
+    Article.findOne({title: req.params.articleName}, function(err, foundArticle) {
+        if (!err){
+            res.send(foundArticle)
+        }else{
+            res.send("No articles matching that title was found.")
+        }
+    });
+})
+
+.put(function(req, res){
+    Article.updateMany(
+        {title: req.params.articleName},
+        {title: req.body.title, content: req.body.content},
+        {overwrite: true},
+        function(err){
+            if(!err){
+                res.send("Update Successful")
+            }else{
+                res.send(err)
+            }
+        }
+    )
+})
+
+.patch(function(req, res){
+    Article.updateMany(
+        {title: req.params.articleName},
+        {$set: req.body},
+        function(err){
+            if(!err){
+                res.send("Update Successful")
+            }else{
+                res.send(err)
+            }
+        }
+    )
+})
+
+.delete(function(req, res){
+    Article.deleteOne({title: req.body.title}, function(err){
+        if(!err){
+            res.send("Delete successful")
+        }else{
+            res.send(err)
+        }
+    })
+})
 
 // listen
 app.listen(3000, function(){
