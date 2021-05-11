@@ -1,5 +1,6 @@
 //jshint esversi//
 //require 
+require('dotenv').config()
 const express = require('express');
 const ejs = require ('ejs');
 const mongoose = require('mongoose');
@@ -28,7 +29,7 @@ const userSchema = new mongoose.Schema({
 });
 
 // // encryption setup
-const secret = "DirtyLittleSecretRelatedToADirtyLilMan"
+secret = process.env.SECRET
 userSchema.plugin(encrypt, { secret:secret, encryptedFields:["password"] });
 
 // //  Mongo model
