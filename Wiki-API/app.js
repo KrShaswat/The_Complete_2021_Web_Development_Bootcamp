@@ -8,8 +8,8 @@ const app = express();
 
 // mongoose connect
 mongoose.connect("mongodb://localhost:27017/wikiDB", {
-    useNewUrlParser:true,
-    useUnifiedTopology: true
+    // useNewUrlParser:true,
+    // useUnifiedTopology: true
 })
 
 //set up ejs engine
